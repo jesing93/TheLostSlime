@@ -22,7 +22,7 @@ public class PlayerMovement : MonoBehaviour
     private float? lastGroundedTime;
     private float? jumpButtonPressedTime;
     [SerializeField]
-    private bool isGrounded;
+    private bool isFalling;
 
     [SerializeField]
     private float jumpButtonGracePeriod;
@@ -31,6 +31,7 @@ public class PlayerMovement : MonoBehaviour
     private float vAxis = 0;
     private float hAxis = 0;
     private bool jumpInput = false;
+    private bool swallowInput = false;
 
     //Jump
     //private float jumpSpeed;
@@ -76,6 +77,7 @@ public class PlayerMovement : MonoBehaviour
         hAxis = Input.GetAxisRaw("Horizontal");
 
         jumpInput = Input.GetKeyDown(KeyCode.W);
+        swallowInput = Input.GetKeyDown(KeyCode.E);
     }
 
     /// <summary>
@@ -94,7 +96,7 @@ public class PlayerMovement : MonoBehaviour
         //Update moving state
         if (hAxis == 0)
         {
-            playerAnimator.SetBool("IsMoving", false);
+            playerAnimator.SetBool("isMoving", false);
         }
         else
         {
@@ -108,18 +110,18 @@ public class PlayerMovement : MonoBehaviour
                 playerSprite.flipX = true;
             }
 
-            playerAnimator.SetBool("IsMoving", true);
+            playerAnimator.SetBool("isMoving", true);
         }
 
-        if (IsGrounded() && !isGrounded)
+        if (IsGrounded() && isFalling)
         {
-            isGrounded = true;
-            playerAnimator.SetBool("isGrounded", true);
+            isFalling = false;
+            playerAnimator.SetBool("isFalling", false);
         }
-        else if(!IsGrounded() && isGrounded)
+        else if(!IsGrounded() && !isFalling)
         {
-            isGrounded = false;
-            playerAnimator.SetBool("isGrounded", false);
+            isFalling = true;
+            playerAnimator.SetBool("isFalling", true);
         }
     }
 
@@ -136,12 +138,27 @@ public class PlayerMovement : MonoBehaviour
     /// Player jump
     /// </summary>
     private void Jump()
-    {;
-        if(jumpInput && IsGrounded())
+    {
+        if (swallowInput)
         {
+            playerAnimator.SetTrigger("swallow");
+        }
+        if (jumpInput && !isFalling)
+        {
+            playerAnimator.SetTrigger("jump");
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
-            //playerAnimator.SetBool("isJumping", true);
-            playerAnimator.SetTrigger("Jump");
         }
     }
+
+    /// <summary>
+    /// Launch the character with delay to give time for the animation to play
+    /// </summary>
+    /*private IEnumerator JumpLaunch()
+    {
+        //Delay before start
+        yield return new WaitForSeconds(0.1f);
+
+        //Launch
+        rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+    }*/
 }
