@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using static UnityEditor.Progress;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,9 +14,11 @@ public class PlayerController : MonoBehaviour
     private SpriteRenderer playerSprite;
     private GameObject playerFoot; //For ground check
     private Animator playerAnimator;
+    private GameObject swallowPoint; //For swallowing check
+    private float swallowRange = 0.5f;
 
-    //Ground Check
-    private LayerMask layer;
+    //Layers
+    private LayerMask groundLayer;
 
     //Move
     [Header("Movement")]
@@ -25,7 +29,7 @@ public class PlayerController : MonoBehaviour
     private float? jumpButtonPressedTime;
     private bool isJumping;
     private bool isFalling;
-    private bool isSwallowing;
+    private bool isBusy;
 
     [SerializeField]
     private float jumpButtonGracePeriod;
@@ -35,12 +39,17 @@ public class PlayerController : MonoBehaviour
     private float hAxis = 0;
     private bool jumpInput = false;
     private bool swallowInput = false;
+    private bool spitInput = false;
 
     //Jump
     //private float jumpSpeed;
     [SerializeField]
     private float jumpForce = 5f;
     private Vector3 jumpVector = Vector3.zero;
+
+    //Data
+    private int stomachCapacity = 3;
+    private List<GameObject> stomachItems = new List<GameObject>();
 
     #endregion;
     private void Awake()
@@ -50,8 +59,9 @@ public class PlayerController : MonoBehaviour
         playerSprite = GameObject.Find
             ("PlayerSprite").GetComponent<SpriteRenderer>();
         playerFoot = GameObject.Find("PlayerFoot");
-        layer = LayerMask.GetMask("Ground");
+        groundLayer = LayerMask.GetMask("Ground");
         playerAnimator = GetComponentInChildren<Animator>();
+        swallowPoint = GameObject.Find("SwallowPoint");
     }
 
     private void Start()
@@ -64,6 +74,7 @@ public class PlayerController : MonoBehaviour
         GetInputs();
         Move();
         Swallow();
+        Spit();
         Jump();
     }
 
@@ -82,6 +93,7 @@ public class PlayerController : MonoBehaviour
 
         jumpInput = Input.GetKeyDown(KeyCode.W);
         swallowInput = Input.GetKeyDown(KeyCode.E);
+        spitInput = Input.GetKeyDown(KeyCode.Q);
     }
 
     /// <summary>
@@ -89,7 +101,7 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void Move()
     {
-        if (!isSwallowing)
+        if (!isBusy)
         {
             rb.velocity = new Vector2(hAxis * moveSpeed, rb.velocity.y);
         }
@@ -100,7 +112,7 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void AnimUpdate()
     {
-        if (!isSwallowing && !isJumping)
+        if (!isBusy && !isJumping)
         {
             //Update moving state
             if (hAxis == 0)
@@ -113,10 +125,19 @@ public class PlayerController : MonoBehaviour
                 if (hAxis > 0)
                 {
                     playerSprite.flipX = false;
+                    swallowPoint.transform.localPosition = new Vector3(
+                    0.6f,
+                    swallowPoint.transform.localPosition.y,
+                    swallowPoint.transform.localPosition.z);
                 }
                 else if (hAxis < 0)
                 {
                     playerSprite.flipX = true;
+                    swallowPoint.transform.localPosition = new Vector3(
+                    -0.6f,
+                    swallowPoint.transform.localPosition.y,
+                    swallowPoint.transform.localPosition.z);
+
                 }
 
                 playerAnimator.SetBool("isMoving", true);
@@ -141,7 +162,7 @@ public class PlayerController : MonoBehaviour
     /// <returns>Is grounded</returns>
     private bool IsGrounded()
     {
-        return Physics2D.Raycast(playerFoot.transform.position, Vector3.down, 0.5f, layer);
+        return Physics2D.Raycast(playerFoot.transform.position, Vector3.down, 0.5f, groundLayer);
     }
 
     /// <summary>
@@ -149,7 +170,7 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void Jump()
     {
-        if (jumpInput && !isFalling && !isSwallowing && !isJumping)
+        if (jumpInput && !isFalling && !isBusy && !isJumping)
         {
             playerAnimator.SetTrigger("jump");
             isJumping = true;
@@ -174,22 +195,124 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void Swallow()
     {
-        if (swallowInput && !isFalling && !isJumping)
+        if (swallowInput && !isFalling && !isJumping && !isBusy)
         {
-            isSwallowing = true;
+            isBusy = true;
             playerAnimator.SetTrigger("swallow");
             StartCoroutine(EndSwallow());
+
+            GameObject item = SearchItemToSwallow();
+            if (item != null)
+            {
+                if (stomachItems.Count < stomachCapacity)
+                {
+                    StartCoroutine(SwallowItem(item));
+                }
+
+            }
         }
     }
 
     /// <summary>
-    /// Delay for the swallowing skill
+    /// Detect swallowables in range
+    /// </summary>
+    private GameObject SearchItemToSwallow()
+    {
+        Collider2D[] items = Physics2D.OverlapCircleAll(swallowPoint.transform.position, swallowRange, groundLayer);
+        Collider2D obstacle = null, powerUp = null;
+        foreach (Collider2D item in items)
+        {
+            if(item.CompareTag("Obstacle"))
+            {
+                obstacle = item;
+            }
+            else if (item.CompareTag("Obstacle"))
+            {
+                powerUp = item;
+            }
+        }
+        if (powerUp != null)
+        {
+            return powerUp.GameObject();
+        }
+        else if (obstacle != null)
+        {
+            return obstacle.GameObject();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Delay before swallowing
+    /// </summary>
+    private IEnumerator SwallowItem(GameObject item)
+    {
+        //Animation delay
+        yield return new WaitForSeconds(0.4f);
+
+        item.SetActive(false);
+        stomachItems.Add(item);
+    }
+
+    /// <summary>
+    /// Delay after swallowing
     /// </summary>
     private IEnumerator EndSwallow()
     {
         //Animation delay
-        yield return new WaitForSeconds(1.3f);
+        yield return new WaitForSeconds(0.9f);
 
-        isSwallowing = false;
+        isBusy = false;
+    }
+
+    /// <summary>
+    /// Player swallow skill
+    /// </summary>
+    private void Spit()
+    {
+        if (spitInput && !isFalling && !isJumping && !isBusy)
+        {
+            isBusy = true;
+            playerAnimator.SetTrigger("swallow");
+            StartCoroutine(EndSwallow());
+
+            if (stomachItems.Count > 0)
+            {
+                StartCoroutine(SpitItem());
+            }
+        }
+    }
+
+    /// <summary>
+    /// Delay before swallowing
+    /// </summary>
+    private IEnumerator SpitItem()
+    {
+        Vector3 position = swallowPoint.transform.position;
+        //Animation delay
+        yield return new WaitForSeconds(0.4f);
+
+        GameObject item = stomachItems.Last();
+        stomachItems.Remove(item);
+
+        if (playerSprite.flipX)
+        {
+            position = new Vector3(
+            position.x - 1f,
+            swallowPoint.transform.localPosition.y,
+            swallowPoint.transform.localPosition.z);
+        }
+        else
+        {
+            position = new Vector3(
+            position.x + 1f,
+            position.y,
+            position.z);
+        }
+        item.transform.position = position;
+        item.SetActive(true);
     }
 }
