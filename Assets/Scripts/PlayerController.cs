@@ -263,7 +263,7 @@ public class PlayerController : MonoBehaviour
     private IEnumerator EndSwallow()
     {
         //Animation delay
-        yield return new WaitForSeconds(0.9f);
+        yield return new WaitForSeconds(1f);
 
         isBusy = false;
     }
@@ -276,7 +276,7 @@ public class PlayerController : MonoBehaviour
         if (spitInput && !isFalling && !isJumping && !isBusy)
         {
             isBusy = true;
-            playerAnimator.SetTrigger("swallow");
+            playerAnimator.SetTrigger("spit");
             StartCoroutine(EndSwallow());
 
             if (stomachItems.Count > 0)
