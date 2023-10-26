@@ -29,7 +29,7 @@ public class PlayerController : MonoBehaviour
     private float? jumpButtonPressedTime;
     private bool isJumping;
     private bool isFalling;
-    private bool isBusy;
+    private bool isBusy; //Bool to block other actions while doing specific actions
 
     [SerializeField]
     private float jumpButtonGracePeriod;
@@ -88,9 +88,11 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void GetInputs()
     {
+        //Movement inputs
         vAxis = Input.GetAxisRaw("Vertical");
         hAxis = Input.GetAxisRaw("Horizontal");
 
+        //Action inputs
         jumpInput = Input.GetKeyDown(KeyCode.W);
         swallowInput = Input.GetKeyDown(KeyCode.E);
         spitInput = Input.GetKeyDown(KeyCode.Q);
@@ -101,6 +103,7 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void Move()
     {
+        //Only muve when not doing something else
         if (!isBusy)
         {
             rb.velocity = new Vector2(hAxis * moveSpeed, rb.velocity.y);
@@ -114,14 +117,14 @@ public class PlayerController : MonoBehaviour
     {
         if (!isBusy && !isJumping)
         {
-            //Update moving state
+            //Update animation to idle
             if (hAxis == 0)
             {
                 playerAnimator.SetBool("isMoving", false);
             }
             else
             {
-                //Flip sprite
+                //Flip sprite and swallow point
                 if (hAxis > 0)
                 {
                     playerSprite.flipX = false;
@@ -140,9 +143,11 @@ public class PlayerController : MonoBehaviour
 
                 }
 
+                //Update animation to moving
                 playerAnimator.SetBool("isMoving", true);
             }
 
+            //Change falling state and animation if grounded and viceversa
             if (IsGrounded() && isFalling)
             {
                 isFalling = false;
@@ -174,6 +179,7 @@ public class PlayerController : MonoBehaviour
         {
             playerAnimator.SetTrigger("jump");
             isJumping = true;
+            //Delay the jump after the animation started
             StartCoroutine(JumpDelayed());
         }
     }
@@ -195,17 +201,22 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void Swallow()
     {
+        //Only swallow if not doing something else
         if (swallowInput && !isFalling && !isJumping && !isBusy)
         {
             isBusy = true;
             playerAnimator.SetTrigger("swallow");
+            //Disable busy once animation finish
             StartCoroutine(EndSwallow());
 
+            //Shearch if there is something to swallow
             GameObject item = SearchItemToSwallow();
             if (item != null)
             {
+                //If found something check if there is space in the stomach
                 if (stomachItems.Count < stomachCapacity)
                 {
+                    //Actually swallow the item after the animation started
                     StartCoroutine(SwallowItem(item));
                 }
 
@@ -218,19 +229,23 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private GameObject SearchItemToSwallow()
     {
+        //Collider to check items in range
         Collider2D[] items = Physics2D.OverlapCircleAll(swallowPoint.transform.position, swallowRange, groundLayer);
         Collider2D obstacle = null, powerUp = null;
         foreach (Collider2D item in items)
         {
+            //Check type of item to swallow
             if(item.CompareTag("Obstacle"))
             {
                 obstacle = item;
             }
-            else if (item.CompareTag("Obstacle"))
+            else if (item.CompareTag("PowerUp"))
             {
                 powerUp = item;
             }
         }
+
+        //Prioritize power ups in area adn return only one GameObject
         if (powerUp != null)
         {
             return powerUp.GameObject();
@@ -253,6 +268,7 @@ public class PlayerController : MonoBehaviour
         //Animation delay
         yield return new WaitForSeconds(0.4f);
 
+        //Save item for later use
         item.SetActive(false);
         stomachItems.Add(item);
     }
@@ -273,14 +289,18 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void Spit()
     {
+        //Only spit if not doing something else
         if (spitInput && !isFalling && !isJumping && !isBusy)
         {
             isBusy = true;
             playerAnimator.SetTrigger("spit");
+            //Use the same corroutine that swallow to disable the busy state
             StartCoroutine(EndSwallow());
 
+            //If there is items in the stomach we spit the last one
             if (stomachItems.Count > 0)
             {
+                //Coroutine to spit the item once the animation started
                 StartCoroutine(SpitItem());
             }
         }
@@ -295,9 +315,12 @@ public class PlayerController : MonoBehaviour
         //Animation delay
         yield return new WaitForSeconds(0.4f);
 
+        //Get the last swallowed item
         GameObject item = stomachItems.Last();
+        //Remove it from stomach
         stomachItems.Remove(item);
 
+        //Depending on the orientation we spawn it at the left or the right
         if (playerSprite.flipX)
         {
             position = new Vector3(
@@ -312,6 +335,7 @@ public class PlayerController : MonoBehaviour
             position.y,
             position.z);
         }
+        
         item.transform.position = position;
         item.SetActive(true);
     }
