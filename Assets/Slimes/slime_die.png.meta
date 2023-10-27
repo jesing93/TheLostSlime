@@ -2033,6 +2033,27 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: slime_die_91
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 1
+        width: 1
+        height: 1
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: de0f67c4244cf864fb5ba6cea30554b2
+      internalID: 798751114
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     physicsShape: []
     bones: []
@@ -2135,6 +2156,7 @@ TextureImporter:
       slime_die_89: 1268759661
       slime_die_9: -323911601
       slime_die_90: -942593774
+      slime_die_91: 798751114
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

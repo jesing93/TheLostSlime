@@ -22,4 +22,16 @@ public class GameManager : MonoBehaviour
         //Delay before start
         yield return new WaitForSeconds(0.05f);
     }
+
+    public IEnumerator RestartLevel(float delay = 1)
+    {
+        yield return new WaitForSeconds(delay);
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+}
+
+// Public type of damage
+public enum DamageType
+{
+    piercing, bludgeoning, slashing
 }

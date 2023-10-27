@@ -30,6 +30,7 @@ public class PlayerController : MonoBehaviour
     private bool isJumping;
     private bool isFalling;
     private bool isBusy; //Bool to block other actions while doing specific actions
+    private bool isDead;
 
     [SerializeField]
     private float jumpButtonGracePeriod;
@@ -338,5 +339,22 @@ public class PlayerController : MonoBehaviour
         
         item.transform.position = position;
         item.SetActive(true);
+    }
+
+    /// <summary>
+    /// Handle being hit
+    /// </summary>
+    public void ReceiveDamage(DamageType damageType)
+    {
+        if(!isDead)
+        {
+            isDead = true;
+            isBusy = true;
+            rb.velocity = Vector3.zero;
+            rb.gravityScale = 0;
+            playerAnimator.SetTrigger("die");
+            //GameManager.instance.RestartLevel();
+            //TODO handle different damage types
+        }
     }
 }
