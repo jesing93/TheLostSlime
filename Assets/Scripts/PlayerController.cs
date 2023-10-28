@@ -41,6 +41,7 @@ public class PlayerController : MonoBehaviour
     private bool jumpInput = false;
     private bool swallowInput = false;
     private bool spitInput = false;
+    private bool pauseInput = false;
 
     //Jump
     //private float jumpSpeed;
@@ -63,11 +64,8 @@ public class PlayerController : MonoBehaviour
         groundLayer = LayerMask.GetMask("Ground");
         playerAnimator = GetComponentInChildren<Animator>();
         swallowPoint = GameObject.Find("SwallowPoint");
-    }
 
-    private void Start()
-    {
-
+        Time.timeScale = 1;
     }
 
     private void Update()
@@ -77,6 +75,7 @@ public class PlayerController : MonoBehaviour
         Swallow();
         Spit();
         Jump();
+        Pause();
     }
 
     private void FixedUpdate()
@@ -97,6 +96,20 @@ public class PlayerController : MonoBehaviour
         jumpInput = Input.GetKeyDown(KeyCode.W);
         swallowInput = Input.GetKeyDown(KeyCode.E);
         spitInput = Input.GetKeyDown(KeyCode.Q);
+
+        //UI inputs
+        pauseInput = Input.GetKeyDown(KeyCode.P);
+    }
+
+    /// <summary>
+    /// Pause the game
+    /// </summary>
+    private void Pause()
+    {
+        if (pauseInput)
+        {
+            GameManager.instance.TogglePause();
+        }
     }
 
     /// <summary>
@@ -206,6 +219,7 @@ public class PlayerController : MonoBehaviour
         if (swallowInput && !isFalling && !isJumping && !isBusy)
         {
             isBusy = true;
+            rb.velocity = Vector2.zero;
             playerAnimator.SetTrigger("swallow");
             //Disable busy once animation finish
             StartCoroutine(EndSwallow());
@@ -294,6 +308,7 @@ public class PlayerController : MonoBehaviour
         if (spitInput && !isFalling && !isJumping && !isBusy)
         {
             isBusy = true;
+            rb.velocity = Vector2.zero;
             playerAnimator.SetTrigger("spit");
             //Use the same corroutine that swallow to disable the busy state
             StartCoroutine(EndSwallow());
@@ -351,9 +366,8 @@ public class PlayerController : MonoBehaviour
             isDead = true;
             isBusy = true;
             rb.velocity = Vector3.zero;
-            rb.gravityScale = 0;
             playerAnimator.SetTrigger("die");
-            //GameManager.instance.RestartLevel();
+            StartCoroutine(GameManager.instance.LooseGame());
             //TODO handle different damage types
         }
     }

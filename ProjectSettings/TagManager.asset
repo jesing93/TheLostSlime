@@ -6,6 +6,11 @@ TagManager:
   tags:
   - Obstacle
   - PowerUp
+  - PausePanel
+  - WinPanel
+  - LoosePanel
+  - EndPanel
+  - FadePanel
   layers:
   - Default
   - TransparentFX

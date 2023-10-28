@@ -18,4 +18,11 @@ public class DangerController : MonoBehaviour
             collision.gameObject.GetComponent<PlayerController>().ReceiveDamage(damageType);
         }
     }
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            collision.gameObject.GetComponent<PlayerController>().ReceiveDamage(damageType);
+        }
+    }
 }
