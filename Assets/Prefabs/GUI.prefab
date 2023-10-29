@@ -1719,7 +1719,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: YOU LOOSE
+  m_text: YOU LOSE
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9adb05b31eae0094ca451fd2fe582b1a, type: 2}
   m_sharedMaterial: {fileID: 7961697350447354244, guid: 9adb05b31eae0094ca451fd2fe582b1a, type: 2}
@@ -4331,8 +4331,8 @@ GameObject:
   - component: {fileID: 2275244025932594636}
   - component: {fileID: 3377779330957659178}
   m_Layer: 5
-  m_Name: LoosePanel
-  m_TagString: LoosePanel
+  m_Name: LosePanel
+  m_TagString: LosePanel
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

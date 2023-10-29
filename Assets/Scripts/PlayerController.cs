@@ -15,10 +15,15 @@ public class PlayerController : MonoBehaviour
     private GameObject playerFoot; //For ground check
     private Animator playerAnimator;
     private GameObject swallowPoint; //For swallowing check
-    private float swallowRange = 0.5f;
+    [SerializeField]
+    private GameObject puffEffect; //Prefab of the puff effect
+    [SerializeField]
+    private GameObject teleportEffect; //Prefab of the teleport effect
 
     //Layers
     private LayerMask groundLayer;
+    private LayerMask obstacleLayer;
+    private LayerMask itemLayer;
 
     //Move
     [Header("Movement")]
@@ -27,13 +32,6 @@ public class PlayerController : MonoBehaviour
     private float ySpeed;
     private float? lastGroundedTime;
     private float? jumpButtonPressedTime;
-    private bool isJumping;
-    private bool isFalling;
-    private bool isBusy; //Bool to block other actions while doing specific actions
-    private bool isDead;
-
-    [SerializeField]
-    private float jumpButtonGracePeriod;
 
     //Inputs
     private float vAxis = 0;
@@ -42,6 +40,7 @@ public class PlayerController : MonoBehaviour
     private bool swallowInput = false;
     private bool spitInput = false;
     private bool pauseInput = false;
+    private bool skillInput = false;
 
     //Jump
     //private float jumpSpeed;
@@ -52,6 +51,15 @@ public class PlayerController : MonoBehaviour
     //Data
     private int stomachCapacity = 3;
     private List<GameObject> stomachItems = new List<GameObject>();
+    [SerializeField]
+    private float jumpButtonGracePeriod;
+    private float swallowRange = 0.5f;
+    private SlimeType slimeType = SlimeType.basic;
+    private bool isJumping;
+    private bool isFalling;
+    private bool isBusy; //Bool to block other actions while doing specific actions or animations
+    private bool isDead;
+    private bool skillInCooldown;
 
     #endregion;
     private void Awake()
@@ -62,6 +70,8 @@ public class PlayerController : MonoBehaviour
             ("PlayerSprite").GetComponent<SpriteRenderer>();
         playerFoot = GameObject.Find("PlayerFoot");
         groundLayer = LayerMask.GetMask("Ground");
+        obstacleLayer = LayerMask.GetMask("Obstacle");
+        itemLayer = LayerMask.GetMask("Item");
         playerAnimator = GetComponentInChildren<Animator>();
         swallowPoint = GameObject.Find("SwallowPoint");
 
@@ -75,6 +85,7 @@ public class PlayerController : MonoBehaviour
         Swallow();
         Spit();
         Jump();
+        Skill();
         Pause();
     }
 
@@ -96,6 +107,7 @@ public class PlayerController : MonoBehaviour
         jumpInput = Input.GetKeyDown(KeyCode.W);
         swallowInput = Input.GetKeyDown(KeyCode.E);
         spitInput = Input.GetKeyDown(KeyCode.Q);
+        skillInput = Input.GetKeyDown(KeyCode.Space);
 
         //UI inputs
         pauseInput = Input.GetKeyDown(KeyCode.P);
@@ -129,7 +141,7 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void AnimUpdate()
     {
-        if (!isBusy && !isJumping)
+        if (!isBusy && !isJumping && !isDead)
         {
             //Update animation to idle
             if (hAxis == 0)
@@ -181,7 +193,9 @@ public class PlayerController : MonoBehaviour
     /// <returns>Is grounded</returns>
     private bool IsGrounded()
     {
-        return Physics2D.Raycast(playerFoot.transform.position, Vector3.down, 0.5f, groundLayer);
+        bool groundObjects = Physics2D.Raycast(playerFoot.transform.position, Vector3.down, 0.5f, groundLayer | obstacleLayer);
+        
+        return groundObjects;
     }
 
     /// <summary>
@@ -189,7 +203,7 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void Jump()
     {
-        if (jumpInput && !isFalling && !isBusy && !isJumping)
+            if (jumpInput && !isFalling && !isBusy && !isJumping && slimeType == SlimeType.basic)
         {
             playerAnimator.SetTrigger("jump");
             isJumping = true;
@@ -216,7 +230,7 @@ public class PlayerController : MonoBehaviour
     private void Swallow()
     {
         //Only swallow if not doing something else
-        if (swallowInput && !isFalling && !isJumping && !isBusy)
+        if (swallowInput && !isFalling && !isJumping && !isBusy && !isDead)
         {
             isBusy = true;
             rb.velocity = Vector2.zero;
@@ -228,13 +242,24 @@ public class PlayerController : MonoBehaviour
             GameObject item = SearchItemToSwallow();
             if (item != null)
             {
-                //If found something check if there is space in the stomach
-                if (stomachItems.Count < stomachCapacity)
+                if (item.CompareTag("Obstacle"))
                 {
-                    //Actually swallow the item after the animation started
-                    StartCoroutine(SwallowItem(item));
+                    //If found something check if there is space in the stomach
+                    if (stomachItems.Count < stomachCapacity)
+                    {
+                        //Actually swallow the item after the animation started
+                        StartCoroutine(SwallowItem(item));
+                    }
                 }
-
+                else
+                {
+                    //If power up type is different than own type
+                    SlimeType newType = item.GetComponentInParent<PowerUpController>().Type;
+                    if (newType != slimeType)
+                    {
+                        StartCoroutine(EndSwitch(item, newType));
+                    }
+                }
             }
         }
     }
@@ -245,7 +270,7 @@ public class PlayerController : MonoBehaviour
     private GameObject SearchItemToSwallow()
     {
         //Collider to check items in range
-        Collider2D[] items = Physics2D.OverlapCircleAll(swallowPoint.transform.position, swallowRange, groundLayer);
+        Collider2D[] items = Physics2D.OverlapCircleAll(swallowPoint.transform.position, swallowRange, obstacleLayer | itemLayer);
         Collider2D obstacle = null, powerUp = null;
         foreach (Collider2D item in items)
         {
@@ -260,14 +285,14 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        //Prioritize power ups in area adn return only one GameObject
-        if (powerUp != null)
-        {
-            return powerUp.GameObject();
-        }
-        else if (obstacle != null)
+        //Prioritize obstacles in area and return only one GameObject
+        if (obstacle != null)
         {
             return obstacle.GameObject();
+        }
+        else if (powerUp != null)
+        {
+            return powerUp.GameObject();
         }
         else
         {
@@ -283,6 +308,11 @@ public class PlayerController : MonoBehaviour
         //Animation delay
         yield return new WaitForSeconds(0.4f);
 
+        //Spawn puff effect next to the swallow point
+        StartCoroutine(SpawnPuff(swallowPoint.transform.position + (new Vector3(playerSprite.flipX ? -1 : 1, 0, 0))));
+
+        //Hide delay
+        yield return new WaitForSeconds(0.1f);
         //Save item for later use
         item.SetActive(false);
         stomachItems.Add(item);
@@ -300,12 +330,48 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Player swallow skill
+    /// Apply switch effects after animation ended
+    /// </summary>
+    private IEnumerator EndSwitch(GameObject item, SlimeType newType)
+    {
+        //Switcher power up change delay
+        yield return new WaitForSeconds(0.7f);
+
+        //Update switcher power up to my old type
+        item.GetComponentInParent<PowerUpController>().updateType(slimeType);
+
+        //Puff effect delay
+        yield return new WaitForSeconds(0.25f);
+
+        //Spawn puff effect over the player sprite
+        StartCoroutine(SpawnPuff(this.transform.position + new Vector3(0, 0.5f, 0)));
+
+        //Small delay before own change
+        yield return new WaitForSeconds(0.1f);
+
+        //Update my own type
+        slimeType = newType;
+
+        //Pick the new color id
+        int typeId = 0;
+        switch (slimeType)
+        {
+            case SlimeType.teleport:
+                typeId = 1;
+                break;
+        }
+        //Update animator
+        playerAnimator.SetInteger("type", typeId);
+        playerAnimator.SetTrigger("switchType");
+    }
+
+    /// <summary>
+    /// Player spit skill
     /// </summary>
     private void Spit()
     {
         //Only spit if not doing something else
-        if (spitInput && !isFalling && !isJumping && !isBusy)
+        if (spitInput && !isFalling && !isJumping && !isBusy && !isDead)
         {
             isBusy = true;
             rb.velocity = Vector2.zero;
@@ -329,7 +395,13 @@ public class PlayerController : MonoBehaviour
     {
         Vector3 position = swallowPoint.transform.position;
         //Animation delay
-        yield return new WaitForSeconds(0.4f);
+        yield return new WaitForSeconds(0.3f);
+
+        //Spawn puff effect next to the swallow point
+        StartCoroutine(SpawnPuff(swallowPoint.transform.position + (new Vector3(playerSprite.flipX ? -1 : 1, 0, 0))));
+
+        //Activation delay
+        yield return new WaitForSeconds(0.1f);
 
         //Get the last swallowed item
         GameObject item = stomachItems.Last();
@@ -357,6 +429,119 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
+    /// Player teleport skill
+    /// </summary>
+    private void Skill()
+    {
+        //Only use skill if not doing something else
+        if (skillInput && !isBusy && !isDead && !skillInCooldown)
+        {
+            //Check if this type have a active skill
+            if (slimeType == SlimeType.teleport)
+            {
+                //Calculate the direction to teleport
+                Vector3 teleportVector;
+                if (hAxis != 0 || vAxis != 0)
+                {
+                    teleportVector = new Vector3(hAxis, vAxis, 0);
+                    teleportVector.Normalize();
+                }
+                else
+                {
+                    if(playerSprite.flipX)
+                    {
+                        teleportVector = Vector3.left;
+                    }
+                    else
+                    {
+                        teleportVector = Vector3.right;
+                    }
+                }
+                teleportVector *= 5; //Teleport distance
+                //Check if the destination is a valid target location
+                Collider2D[] items = Physics2D.OverlapBoxAll(this.transform.position + teleportVector + new Vector3(0, 0.5f, 0), new Vector2 (0.49f,0.49f), obstacleLayer | groundLayer);
+                if (items.Length == 0)
+                {
+                    isBusy = true;
+                    skillInCooldown = true;
+                    //Spawn puff effect over the player sprite on origin location
+                    StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
+
+                    //TODO: Teleport animation
+                    this.transform.position += teleportVector;
+
+                    //Spawn puff effect over the player sprite on target location
+                    StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
+
+                    //Corroutine to end the skill
+                    StartCoroutine(EndSkill(0.2f));
+                    //Coroutine for the skill cooldown
+                    StartCoroutine(EndCooldown(2f));
+                }
+
+            }
+        }
+    }
+
+    /// <summary>
+    /// Delay after skill use
+    /// </summary>
+    private IEnumerator EndSkill(float skillDelay = 1f)
+    {
+        //Animation delay
+        yield return new WaitForSeconds(skillDelay);
+
+        isBusy = false;
+    }
+
+    /// <summary>
+    /// End the cooldown of the skill
+    /// </summary>
+    private IEnumerator EndCooldown(float skillCooldown = 1f)
+    {
+        //Animation delay
+        yield return new WaitForSeconds(skillCooldown);
+
+        skillInCooldown = false;
+    }
+
+    /// <summary>
+    /// Spawn puff efect on the specified location. Wait for a delay if specified.
+    /// </summary>
+    /// <param name="spawnLocation">Spawn location</param>
+    /// <param name="spawnDelay">Spawn delay</param>
+    /// <returns></returns>
+    private IEnumerator SpawnPuff(Vector3 spawnLocation, float spawnDelay = 0)
+    {
+        //Spawn delay
+        yield return new WaitForSeconds(spawnDelay);
+
+        GameObject item = Instantiate(puffEffect, spawnLocation, Quaternion.identity);
+        
+        //Despawn delay
+        yield return new WaitForSeconds(0.42f);
+        Destroy(item);
+    }
+
+    /// <summary>
+    /// Spawn teleport efect on the specified location. Wait for a delay if specified.
+    /// </summary>
+    /// <param name="spawnLocation">Spawn location</param>
+    /// <param name="spawnDelay">Spawn delay</param>
+    /// <returns></returns>
+    private IEnumerator SpawnTeleport(Vector3 spawnLocation, float spawnDelay = 0)
+    {
+        //Spawn delay
+        yield return new WaitForSeconds(spawnDelay);
+
+        GameObject item = Instantiate(teleportEffect, spawnLocation, Quaternion.identity);
+
+        //Despawn delay
+        yield return new WaitForSeconds(0.42f);
+        Destroy(item);
+    }
+
+    /// <summary>
     /// Handle being hit
     /// </summary>
     public void ReceiveDamage(DamageType damageType)
@@ -367,8 +552,14 @@ public class PlayerController : MonoBehaviour
             isBusy = true;
             rb.velocity = Vector3.zero;
             playerAnimator.SetTrigger("die");
-            StartCoroutine(GameManager.instance.LooseGame());
+            StartCoroutine(GameManager.instance.LoseGame());
             //TODO handle different damage types
         }
     }
+}
+
+// Public type of slime
+public enum SlimeType
+{
+    basic, teleport
 }

@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3576906140601952237}
   - component: {fileID: 5369126045642645716}
   - component: {fileID: 4329447019860217856}
-  m_Layer: 6
+  m_Layer: 7
   m_Name: ObstacleBox
   m_TagString: Obstacle
   m_Icon: {fileID: 0}
@@ -77,7 +77,7 @@ BoxCollider2D:
   m_ExcludeLayers:
     serializedVersion: 2
     m_Bits: 0
-  m_LayerOverridePriority: 0
+  m_LayerOverridePriority: -2
   m_ForceSendLayers:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -116,7 +116,7 @@ GameObject:
   m_Component:
   - component: {fileID: 600817462012607766}
   - component: {fileID: 5130079664317983208}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: ObstacleSprite
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -8,9 +8,9 @@ TagManager:
   - PowerUp
   - PausePanel
   - WinPanel
-  - LoosePanel
   - EndPanel
   - FadePanel
+  - LosePanel
   layers:
   - Default
   - TransparentFX
@@ -19,8 +19,8 @@ TagManager:
   - Water
   - UI
   - Ground
-  - 
-  - 
+  - Obstacle
+  - Item
   - 
   - 
   - 

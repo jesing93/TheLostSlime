@@ -11,7 +11,7 @@ public class GameManager : MonoBehaviour
     public static GameManager instance;
     private GameObject pausePanel;
     private GameObject winPanel;
-    private GameObject loosePanel;
+    private GameObject losePanel;
     private GameObject endPanel;
     private GameObject fadePanel;
     private bool gamePaused = false;
@@ -31,14 +31,14 @@ public class GameManager : MonoBehaviour
         //Initialize vars
         pausePanel = GameObject.FindGameObjectWithTag("PausePanel");
         winPanel = GameObject.FindGameObjectWithTag("WinPanel");
-        loosePanel = GameObject.FindGameObjectWithTag("LoosePanel");
+        losePanel = GameObject.FindGameObjectWithTag("LosePanel");
         endPanel = GameObject.FindGameObjectWithTag("EndPanel");
         fadePanel = GameObject.FindGameObjectWithTag("FadePanel");
 
         //Hide all panels
         pausePanel.SetActive(false);
         winPanel.SetActive(false);
-        loosePanel.SetActive(false);
+        losePanel.SetActive(false);
         endPanel.SetActive(false);
 
         //Fade Out
@@ -88,14 +88,14 @@ public class GameManager : MonoBehaviour
     /// <summary>
     /// Loose game panel
     /// </summary>
-    public IEnumerator LooseGame()
+    public IEnumerator LoseGame()
     {
         gameEnded = true;
-        //Delay loose screen
+        //Delay lose screen
         yield return new WaitForSeconds(1f);
 
         Time.timeScale = 0;
-        loosePanel.SetActive(true);
+        losePanel.SetActive(true);
     }
 
     /// <summary>
