@@ -412,14 +412,14 @@ public class PlayerController : MonoBehaviour
         if (playerSprite.flipX)
         {
             position = new Vector3(
-            position.x - 1f,
-            swallowPoint.transform.localPosition.y,
-            swallowPoint.transform.localPosition.z);
+            position.x - 1.1f,
+            position.y,
+            position.z);
         }
         else
         {
             position = new Vector3(
-            position.x + 1f,
+            position.x + 1.1f,
             position.y,
             position.z);
         }
