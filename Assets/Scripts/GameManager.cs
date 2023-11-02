@@ -95,6 +95,7 @@ public class GameManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
 
         Time.timeScale = 0;
+        PlayerController.instance.Rb.gravityScale = 0;
         losePanel.SetActive(true);
     }
 
@@ -104,6 +105,7 @@ public class GameManager : MonoBehaviour
     public void WinGame()
     {
         gameEnded = true;
+        SoundManager.instance.playWinSound();
         if(SceneManager.GetActiveScene().buildIndex == 3)
         {
             endPanel.SetActive(true);
@@ -149,5 +151,5 @@ public class GameManager : MonoBehaviour
 // Public type of damage
 public enum DamageType
 {
-    piercing, bludgeoning, slashing
+    piercing, bludgeoning, slashing, worldFall
 }

@@ -10,6 +10,7 @@ public class PlayerController : MonoBehaviour
 {
     #region Variables;
     //Components
+    [Header("Components")]
     private Rigidbody2D rb;
     private SpriteRenderer playerSprite;
     private GameObject playerFoot; //For ground check
@@ -19,6 +20,19 @@ public class PlayerController : MonoBehaviour
     private GameObject puffEffect; //Prefab of the puff effect
     [SerializeField]
     private GameObject teleportEffect; //Prefab of the teleport effect
+    //Sounds
+    [SerializeField]
+    private AudioSource asJump;
+    [SerializeField]
+    private AudioSource asFall;
+    [SerializeField]
+    private AudioSource asSwallow;
+    [SerializeField]
+    private AudioSource asDeath;
+    [SerializeField]
+    private AudioSource asTeleport;
+    [SerializeField]
+    private AudioSource asMoving;
 
     //Layers
     private LayerMask groundLayer;
@@ -57,13 +71,21 @@ public class PlayerController : MonoBehaviour
     private SlimeType slimeType = SlimeType.basic;
     private bool isJumping;
     private bool isFalling;
+    private bool isMoving;
     private bool isBusy; //Bool to block other actions while doing specific actions or animations
     private bool isDead;
     private bool skillInCooldown;
 
+    public static PlayerController instance;
+
+    public Rigidbody2D Rb { get => rb; set => rb = value; }
+
     #endregion;
     private void Awake()
     {
+        //Singleton
+        instance = this;
+
         //Initialization
         rb = GetComponent<Rigidbody2D>();
         playerSprite = GameObject.Find
@@ -146,7 +168,12 @@ public class PlayerController : MonoBehaviour
             //Update animation to idle
             if (hAxis == 0)
             {
-                playerAnimator.SetBool("isMoving", false);
+                if (isMoving)
+                {
+                    isMoving = false;
+                    asMoving.Stop();
+                    playerAnimator.SetBool("isMoving", false);
+                }
             }
             else
             {
@@ -169,8 +196,19 @@ public class PlayerController : MonoBehaviour
 
                 }
 
-                //Update animation to moving
-                playerAnimator.SetBool("isMoving", true);
+                if (!isMoving && !isFalling)
+                {
+                    isMoving = true;
+                    asMoving.Play();
+                    //Update animation to moving
+                    playerAnimator.SetBool("isMoving", true);
+                }
+                else if (isMoving && isFalling)
+                {
+                    isMoving = false;
+                    asMoving.Stop();
+                    playerAnimator.SetBool("isMoving", false);
+                }
             }
 
             //Change falling state and animation if grounded and viceversa
@@ -178,11 +216,21 @@ public class PlayerController : MonoBehaviour
             {
                 isFalling = false;
                 playerAnimator.SetBool("isFalling", false);
+                asFall.Play();
             }
             else if (!IsGrounded() && !isFalling)
             {
                 isFalling = true;
                 playerAnimator.SetBool("isFalling", true);
+            }
+        }
+        else
+        {
+            if (isMoving)
+            {
+                isMoving = false;
+                asMoving.Stop();
+                playerAnimator.SetBool("isMoving", false);
             }
         }
     }
@@ -205,8 +253,9 @@ public class PlayerController : MonoBehaviour
     {
             if (jumpInput && !isFalling && !isBusy && !isJumping && slimeType == SlimeType.basic)
         {
-            playerAnimator.SetTrigger("jump");
             isJumping = true;
+            asJump.Play();
+            playerAnimator.SetTrigger("jump");
             //Delay the jump after the animation started
             StartCoroutine(JumpDelayed());
         }
@@ -233,6 +282,7 @@ public class PlayerController : MonoBehaviour
         if (swallowInput && !isFalling && !isJumping && !isBusy && !isDead)
         {
             isBusy = true;
+            asSwallow.Play();
             rb.velocity = Vector2.zero;
             playerAnimator.SetTrigger("swallow");
             //Disable busy once animation finish
@@ -374,6 +424,7 @@ public class PlayerController : MonoBehaviour
         if (spitInput && !isFalling && !isJumping && !isBusy && !isDead)
         {
             isBusy = true;
+            asSwallow.Play();
             rb.velocity = Vector2.zero;
             playerAnimator.SetTrigger("spit");
             //Use the same corroutine that swallow to disable the busy state
@@ -464,6 +515,7 @@ public class PlayerController : MonoBehaviour
                 {
                     isBusy = true;
                     skillInCooldown = true;
+                    asTeleport.Play();
                     //Spawn puff effect over the player sprite on origin location
                     StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
 
@@ -550,6 +602,7 @@ public class PlayerController : MonoBehaviour
         {
             isDead = true;
             isBusy = true;
+            asDeath.Play();
             rb.velocity = Vector3.zero;
             playerAnimator.SetTrigger("die");
             StartCoroutine(GameManager.instance.LoseGame());
