@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UIElements;
 
 public class MenuManager : MonoBehaviour
 {
+    [SerializeField]
+    private GameObject[] stomachBullets;
+
     /// <summary>
     /// Unpause the game
     /// </summary>
@@ -54,5 +58,20 @@ public class MenuManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         SceneManager.LoadScene(sceneId);
+    }
+
+    public void UdateStomachUI(int capacity)
+    {
+        for(int i = 0; i < 3; i++)
+        {
+            if (i < capacity)
+            {
+                stomachBullets[i].GetComponent<Image>().tintColor = Color.white;
+            }
+            else
+            {
+                stomachBullets[i].GetComponent<Image>().tintColor = Color.black;
+            }
+        }
     }
 }
