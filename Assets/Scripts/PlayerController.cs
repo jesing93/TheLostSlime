@@ -20,6 +20,9 @@ public class PlayerController : MonoBehaviour
     private GameObject puffEffect; //Prefab of the puff effect
     [SerializeField]
     private GameObject teleportEffect; //Prefab of the teleport effect
+    [SerializeField]
+    private GameObject teleportPoint; //Teleport helper
+
     //Sounds
     [SerializeField]
     private AudioSource asJump;
@@ -114,6 +117,7 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         AnimUpdate();
+        UpdateHelpers();
     }
 
     /// <summary>
@@ -232,6 +236,18 @@ public class PlayerController : MonoBehaviour
                 asMoving.Stop();
                 playerAnimator.SetBool("isMoving", false);
             }
+        }
+    }
+
+    /// <summary>
+    /// Update skill helpers depending on slimeType
+    /// </summary>
+    private void UpdateHelpers()
+    {
+        //Update teleport point location if slimeType is teleport
+        if (slimeType == SlimeType.teleport)
+        {
+            teleportPoint.transform.position = this.transform.position + TeleportVector() + new Vector3(0, 0.5f, 0);
         }
     }
 
@@ -363,9 +379,11 @@ public class PlayerController : MonoBehaviour
 
         //Hide delay
         yield return new WaitForSeconds(0.1f);
+
         //Save item for later use
         item.SetActive(false);
         stomachItems.Add(item);
+        MenuManager.instance.UpdateStomachUI(stomachItems.Count(), true);
     }
 
     /// <summary>
@@ -401,15 +419,21 @@ public class PlayerController : MonoBehaviour
 
         //Update my own type
         slimeType = newType;
+        UpdateHelpers();
 
-        //Pick the new color id
-        int typeId = 0;
+        //Changes derived of changing the type
+        int typeId = 0; //Type id for the animator
         switch (slimeType)
         {
             case SlimeType.teleport:
                 typeId = 1;
+                teleportPoint.SetActive(true);
+                break;
+            case SlimeType.basic:
+                teleportPoint.SetActive(false);
                 break;
         }
+
         //Update animator
         playerAnimator.SetInteger("type", typeId);
         playerAnimator.SetTrigger("switchType");
@@ -458,6 +482,7 @@ public class PlayerController : MonoBehaviour
         GameObject item = stomachItems.Last();
         //Remove it from stomach
         stomachItems.Remove(item);
+        MenuManager.instance.UpdateStomachUI(stomachItems.Count(), false);
 
         //Depending on the orientation we spawn it at the left or the right
         if (playerSprite.flipX)
@@ -490,27 +515,8 @@ public class PlayerController : MonoBehaviour
             //Check if this type have a active skill
             if (slimeType == SlimeType.teleport)
             {
-                //Calculate the direction to teleport
-                Vector3 teleportVector;
-                if (hAxis != 0 || vAxis != 0)
-                {
-                    teleportVector = new Vector3(hAxis, vAxis, 0);
-                    teleportVector.Normalize();
-                }
-                else
-                {
-                    if(playerSprite.flipX)
-                    {
-                        teleportVector = Vector3.left;
-                    }
-                    else
-                    {
-                        teleportVector = Vector3.right;
-                    }
-                }
-                teleportVector *= 5; //Teleport distance
                 //Check if the destination is a valid target location
-                Collider2D[] items = Physics2D.OverlapBoxAll(this.transform.position + teleportVector + new Vector3(0, 0.5f, 0), new Vector2 (0.49f,0.49f), obstacleLayer | groundLayer);
+                Collider2D[] items = Physics2D.OverlapBoxAll(teleportPoint.transform.position, new Vector2 (0.49f,0.49f), obstacleLayer | groundLayer);
                 if (items.Length == 0)
                 {
                     isBusy = true;
@@ -520,7 +526,7 @@ public class PlayerController : MonoBehaviour
                     StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
 
                     //TODO: Teleport animation
-                    this.transform.position += teleportVector;
+                    this.transform.position = teleportPoint.transform.position;
 
                     //Spawn puff effect over the player sprite on target location
                     StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
@@ -528,11 +534,35 @@ public class PlayerController : MonoBehaviour
                     //Corroutine to end the skill
                     StartCoroutine(EndSkill(0.2f));
                     //Coroutine for the skill cooldown
-                    StartCoroutine(EndCooldown(2f));
+                    StartCoroutine(EndCooldown(1f));
                 }
 
             }
         }
+    }
+
+    private Vector3 TeleportVector()
+    {
+        //Calculate the direction to teleport
+        Vector3 teleportVector;
+        if (hAxis != 0 || vAxis != 0)
+        {
+            teleportVector = new Vector3(hAxis, vAxis, 0);
+            teleportVector.Normalize();
+        }
+        else
+        {
+            if (playerSprite.flipX)
+            {
+                teleportVector = Vector3.left;
+            }
+            else
+            {
+                teleportVector = Vector3.right;
+            }
+        }
+        teleportVector *= 5; //Teleport distance
+        return teleportVector;
     }
 
     /// <summary>

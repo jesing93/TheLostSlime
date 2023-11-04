@@ -3,12 +3,23 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UIElements;
+//using UnityEngine.UIElements;
+using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
+    //Singleton
+    public static MenuManager instance;
+
+    //Variables
     [SerializeField]
     private GameObject[] stomachBullets;
+
+    private void Awake()
+    {
+        //Singleton
+        instance = this;
+    }
 
     /// <summary>
     /// Unpause the game
@@ -60,18 +71,15 @@ public class MenuManager : MonoBehaviour
         SceneManager.LoadScene(sceneId);
     }
 
-    public void UdateStomachUI(int capacity)
+    public void UpdateStomachUI(int capacity, bool add)
     {
-        for(int i = 0; i < 3; i++)
+        if (add)
         {
-            if (i < capacity)
-            {
-                stomachBullets[i].GetComponent<Image>().tintColor = Color.white;
-            }
-            else
-            {
-                stomachBullets[i].GetComponent<Image>().tintColor = Color.black;
-            }
+            stomachBullets[capacity - 1].GetComponent<Image>().color = Color.white;
+        }
+        else
+        {
+            stomachBullets[capacity].GetComponent<Image>().color = Color.black;
         }
     }
 }
