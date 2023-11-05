@@ -78,6 +78,7 @@ public class PlayerController : MonoBehaviour
     private bool isBusy; //Bool to block other actions while doing specific actions or animations
     private bool isDead;
     private bool skillInCooldown;
+    private bool jumpInCooldown;
 
     public static PlayerController instance;
 
@@ -267,9 +268,10 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     private void Jump()
     {
-            if (jumpInput && !isFalling && !isBusy && !isJumping && slimeType == SlimeType.basic)
+        if (jumpInput && !isFalling && !isBusy && !isJumping && slimeType == SlimeType.basic && !jumpInCooldown)
         {
             isJumping = true;
+            jumpInCooldown = true;
             asJump.Play();
             playerAnimator.SetTrigger("jump");
             //Delay the jump after the animation started
@@ -287,6 +289,9 @@ public class PlayerController : MonoBehaviour
 
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         isJumping = false;
+
+        yield return new WaitForSeconds(0.5f);
+        jumpInCooldown = false;
     }
 
     /// <summary>
@@ -343,7 +348,10 @@ public class PlayerController : MonoBehaviour
             //Check type of item to swallow
             if(item.CompareTag("Obstacle"))
             {
-                obstacle = item;
+                if (obstacle == null || obstacle.transform.position.y < item.transform.position.y)
+                {
+                    obstacle = item;
+                }
             }
             else if (item.CompareTag("PowerUp"))
             {
@@ -457,8 +465,13 @@ public class PlayerController : MonoBehaviour
             //If there is items in the stomach we spit the last one
             if (stomachItems.Count > 0)
             {
-                //Coroutine to spit the item once the animation started
-                StartCoroutine(SpitItem());
+                //If there is space to spawn
+                Collider2D[] items = Physics2D.OverlapBoxAll(swallowPoint.transform.position, new Vector2(0.8f, 0.4f), 0, groundLayer);
+                if (items.Length == 0)
+                {
+                    //Coroutine to spit the item once the animation started
+                    StartCoroutine(SpitItem());
+                }
             }
         }
     }
@@ -512,31 +525,35 @@ public class PlayerController : MonoBehaviour
         //Only use skill if not doing something else
         if (skillInput && !isBusy && !isDead && !skillInCooldown)
         {
-            //Check if this type have a active skill
-            if (slimeType == SlimeType.teleport)
+            switch (slimeType)
             {
-                //Check if the destination is a valid target location
-                Collider2D[] items = Physics2D.OverlapBoxAll(teleportPoint.transform.position, new Vector2 (0.49f,0.49f), obstacleLayer | groundLayer);
-                if (items.Length == 0)
-                {
-                    isBusy = true;
-                    skillInCooldown = true;
-                    asTeleport.Play();
-                    //Spawn puff effect over the player sprite on origin location
-                    StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
+                case SlimeType.teleport:
+                    //Check if the destination is a valid target location
+                    Collider2D[] items = Physics2D.OverlapBoxAll(teleportPoint.transform.position, new Vector2(0.49f, 0.49f), 0, obstacleLayer | groundLayer);
+                    if (items.Length == 0)
+                    {
+                        isBusy = true;
+                        skillInCooldown = true;
+                        asTeleport.Play();
+                        //Spawn puff effect over the player sprite on origin location
+                        StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
 
-                    //TODO: Teleport animation
-                    this.transform.position = teleportPoint.transform.position;
+                        //TODO: Teleport animation
+                        this.transform.position = teleportPoint.transform.position;
 
-                    //Spawn puff effect over the player sprite on target location
-                    StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
+                        //Spawn puff effect over the player sprite on target location
+                        StartCoroutine(SpawnTeleport(this.transform.position + new Vector3(0, 0.5f, 0)));
 
-                    //Corroutine to end the skill
-                    StartCoroutine(EndSkill(0.2f));
-                    //Coroutine for the skill cooldown
-                    StartCoroutine(EndCooldown(1f));
-                }
+                        //Corroutine to end the skill
+                        StartCoroutine(EndSkill(0.2f));
+                        //Coroutine for the skill cooldown
+                        StartCoroutine(EndCooldown(1f));
+                    }
+                    break;
 
+                case SlimeType.basic:
+                    
+                    break;
             }
         }
     }

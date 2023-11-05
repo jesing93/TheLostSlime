@@ -2124,7 +2124,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "E to swallow up \nto 3 items"
+  m_text: "E to eat up \nto 3 items"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 9adb05b31eae0094ca451fd2fe582b1a, type: 2}
   m_sharedMaterial: {fileID: 7961697350447354244, guid: 9adb05b31eae0094ca451fd2fe582b1a, type: 2}
@@ -2254,8 +2254,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 14.72, y: -2.54}
-  m_SizeDelta: {x: 9, y: 4}
+  m_AnchoredPosition: {x: 14.02, y: -2.54}
+  m_SizeDelta: {x: 7, y: 4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1296990485
 GameObject:
@@ -15337,7 +15337,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3498196378346661026, guid: 92d508a8db98e1543bbf4c81bddf244b, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.5
+      value: -1.5
       objectReference: {fileID: 0}
     - target: {fileID: 3498196378346661026, guid: 92d508a8db98e1543bbf4c81bddf244b, type: 3}
       propertyPath: m_LocalPosition.z

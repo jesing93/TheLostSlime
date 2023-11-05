@@ -27,7 +27,7 @@ public class MainMenuManager : MonoBehaviour
         SoundManager.instance.playButtonClick();
         //Fade In
         StartCoroutine(DoFade(1));
-        StartCoroutine(LoadScene(1));
+        StartCoroutine(LoadScene(2));
     }
 
     /// <summary>
@@ -39,6 +39,12 @@ public class MainMenuManager : MonoBehaviour
         //Fade In
         StartCoroutine(DoFade(1));
         StartCoroutine(ExitGame());
+    }
+
+    public void OnItchioButton()
+    {
+        SoundManager.instance.playButtonClick();
+        Application.OpenURL("https://tankyturtle.itch.io/");
     }
 
     /// <summary>

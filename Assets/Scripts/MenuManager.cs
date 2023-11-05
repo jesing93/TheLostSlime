@@ -66,7 +66,7 @@ public class MenuManager : MonoBehaviour
         //Fade In
         StartCoroutine(GameManager.instance.DoFade(1));
 
-        StartCoroutine(LoadScene(0));
+        StartCoroutine(LoadScene(1));
     }
 
     private IEnumerator LoadScene(int sceneId, float delay = 0.5f)
