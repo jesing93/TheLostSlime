@@ -24,6 +24,7 @@ public class MainMenuManager : MonoBehaviour
     /// </summary>
     public void OnNewGame()
     {
+        SoundManager.instance.playButtonClick();
         //Fade In
         StartCoroutine(DoFade(1));
         StartCoroutine(LoadScene(1));
@@ -34,6 +35,7 @@ public class MainMenuManager : MonoBehaviour
     /// </summary>
     public void OnExitGame()
     {
+        SoundManager.instance.playButtonClick();
         //Fade In
         StartCoroutine(DoFade(1));
         StartCoroutine(ExitGame());

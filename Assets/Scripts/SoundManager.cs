@@ -11,6 +11,8 @@ public class SoundManager : MonoBehaviour
     private AudioSource asGameMusic;
     [SerializeField]
     private AudioSource asWin;
+    [SerializeField]
+    private AudioSource asButton;
 
     public static SoundManager instance;
 
@@ -43,5 +45,10 @@ public class SoundManager : MonoBehaviour
     {
         asGameMusic.Stop();
         asWin.Play();
+    }
+
+    public void playButtonClick()
+    {
+        asButton.Play();
     }
 }

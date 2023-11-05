@@ -26,6 +26,7 @@ public class MenuManager : MonoBehaviour
     /// </summary>
     public void OnContinue()
     {
+        SoundManager.instance.playButtonClick();
         GameManager.instance.TogglePause();
     }
 
@@ -34,6 +35,7 @@ public class MenuManager : MonoBehaviour
     /// </summary>
     public void OnNextLevel()
     {
+        SoundManager.instance.playButtonClick();
         Time.timeScale = 1;
         //Fade In
         StartCoroutine(GameManager.instance.DoFade(1));
@@ -46,6 +48,7 @@ public class MenuManager : MonoBehaviour
     /// </summary>
     public void OnRestartLevel()
     {
+        SoundManager.instance.playButtonClick();
         Time.timeScale = 1;
         //Fade In
         StartCoroutine(GameManager.instance.DoFade(1));
@@ -58,6 +61,7 @@ public class MenuManager : MonoBehaviour
     /// </summary>
     public void OnBackToMenu()
     {
+        SoundManager.instance.playButtonClick();
         Time.timeScale = 1;
         //Fade In
         StartCoroutine(GameManager.instance.DoFade(1));
@@ -67,6 +71,7 @@ public class MenuManager : MonoBehaviour
 
     private IEnumerator LoadScene(int sceneId, float delay = 0.5f)
     {
+        SoundManager.instance.playButtonClick();
         yield return new WaitForSeconds(delay);
         SceneManager.LoadScene(sceneId);
     }
