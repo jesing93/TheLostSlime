@@ -105,7 +105,7 @@ public class GameManager : MonoBehaviour
     {
         gameEnded = true;
         SoundManager.instance.playWinSound();
-        if(SceneManager.GetActiveScene().buildIndex == 3)
+        if(SceneManager.GetActiveScene().buildIndex == SceneManager.sceneCountInBuildSettings - 1)
         {
             endPanel.SetActive(true);
         }
